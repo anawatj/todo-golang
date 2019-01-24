@@ -31,6 +31,9 @@ type Auth struct {
 	UserName string `json:"username"`
 	Password string `json:"password`
 }
+type JwtToken struct {
+	Token string `json:"token"`
+}
 
 // DBMigrate will create and migrate the tables, and then make the some relationships if necessary
 func DBMigrate(db *gorm.DB) *gorm.DB {

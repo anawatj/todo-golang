@@ -3,6 +3,9 @@ package config
 type Config struct {
 	DB *DBConfig
 }
+type JwtCode struct {
+	Key string
+}
 
 type DBConfig struct {
 	Dialect  string
@@ -10,6 +13,12 @@ type DBConfig struct {
 	Password string
 	Name     string
 	Charset  string
+}
+
+func GetJwtKey() *JwtCode {
+	return &JwtCode{
+		Key: "secret",
+	}
 }
 
 func GetConfig() *Config {

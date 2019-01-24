@@ -2,9 +2,12 @@ package handler
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 
+	"../../config"
 	"../model"
+	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/jinzhu/gorm"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -50,5 +53,15 @@ func SignIn(db *gorm.DB, w http.ResponseWriter, r *http.Request) {
 		respondError(w, http.StatusUnauthorized, "Username or password are incorrect")
 		return
 	}
-	respondJSON(w, http.StatusOK, "Sign in success")
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"UserName": auth.UserName,
+		"Password": auth.Password,
+	})
+	tokenString, error := token.SignedString([]byte(config.GetJwtKey().Key))
+	if error != nil {
+		fmt.Println(error)
+	}
+	jwtToken := model.JwtToken{}
+	jwtToken.Token = tokenString
+	respondJSON(w, http.StatusOK, jwtToken)
 }
