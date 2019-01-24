@@ -65,3 +65,35 @@ func CreateProject(db *gorm.DB, w http.ResponseWriter, r *http.Request) {
 	}
 	respondJSON(w, http.StatusCreated, project)
 }
+func UpdateProject(db *gorm.DB, w http.ResponseWriter, r *http.Request) {
+	claims, err := verifyToken(r)
+	if err != nil {
+		respondError(w, http.StatusUnauthorized, "Unauthorize")
+		return
+	}
+	mapClaim := claims.(jwt.MapClaims)
+	auth := model.Auth{
+		UserName: mapClaim["UserName"].(string),
+		Password: mapClaim["Password"].(string),
+	}
+
+	user := model.User{}
+	if err := db.First(&user, model.User{UserName: auth.UserName}).Error; err != nil {
+		respondError(w, http.StatusUnauthorized, "Unauthorize")
+		return
+	}
+
+	project := model.Project{}
+
+	decoder := json.NewDecoder(r.Body)
+	if err := decoder.Decode(&project); err != nil {
+		respondError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+	defer r.Body.Close()
+	if err := db.Save(&project).Error; err != nil {
+		respondError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	respondJSON(w, http.StatusOK, project)
+}
