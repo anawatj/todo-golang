@@ -41,6 +41,7 @@ func (a *App) setRouters() {
 	a.Get("/api/v1/projects", a.GetAllProject)
 	a.Post("/api/v1/projects", a.CreateProject)
 	a.Put("/api/v1/projects", a.UpdateProject)
+	a.Get("/api/v1/projects/{name}", a.GetProject)
 	a.Get("/api/v1/tasks", a.GetAllTask)
 	a.Post("/api/v1/signup", a.SignUp)
 	a.Post("/api/v1/signin", a.SignIn)
@@ -72,6 +73,7 @@ func (a *App) GetAllProject(w http.ResponseWriter, r *http.Request) {
 	handler.GetAllProject(a.DB, w, r)
 }
 
+// /spi/v1/projects put
 func (a *App) UpdateProject(w http.ResponseWriter, r *http.Request) {
 	handler.UpdateProject(a.DB, w, r)
 }
@@ -79,6 +81,11 @@ func (a *App) UpdateProject(w http.ResponseWriter, r *http.Request) {
 // /api/v1/projects post
 func (a *App) CreateProject(w http.ResponseWriter, r *http.Request) {
 	handler.CreateProject(a.DB, w, r)
+}
+
+// /api/v1/projects/:name get
+func (a *App) GetProject(w http.ResponseWriter, r *http.Request) {
+	handler.GetProject(a.DB, w, r)
 }
 
 // /api/v1/tasks get

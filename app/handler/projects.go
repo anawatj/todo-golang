@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/gorilla/mux"
+
 	"../model"
 	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/jinzhu/gorm"
@@ -96,4 +98,38 @@ func UpdateProject(db *gorm.DB, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	respondJSON(w, http.StatusOK, project)
+}
+func GetProject(db *gorm.DB, w http.ResponseWriter, r *http.Request) {
+	claims, err := verifyToken(r)
+	if err != nil {
+		respondError(w, http.StatusUnauthorized, "Unauthorize")
+		return
+	}
+	mapClaim := claims.(jwt.MapClaims)
+	auth := model.Auth{
+		UserName: mapClaim["UserName"].(string),
+		Password: mapClaim["Password"].(string),
+	}
+
+	user := model.User{}
+	if err := db.First(&user, model.User{UserName: auth.UserName}).Error; err != nil {
+		respondError(w, http.StatusUnauthorized, "Unauthorize")
+		return
+	}
+
+	vars := mux.Vars(r)
+	name := vars["name"]
+
+	project := model.Project{}
+	if err := db.First(&project, model.Project{Name: name}).Error; err != nil {
+		respondError(w, http.StatusInternalServerError, err.Error())
+		return
+
+	}
+	if project == (model.Project{}) {
+		respondError(w, http.StatusNotFound, "not found project")
+		return
+	}
+	respondJSON(w, http.StatusOK, project)
+
 }
