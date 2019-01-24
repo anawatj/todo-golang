@@ -6,7 +6,9 @@ import (
 	"net/http"
 
 	"../../config"
+	"../model"
 	jwt "github.com/dgrijalva/jwt-go"
+	"github.com/jinzhu/gorm"
 )
 
 // respondJSON makes the response with payload as json format
@@ -27,8 +29,8 @@ func respondError(w http.ResponseWriter, code int, message string) {
 	respondJSON(w, code, map[string]string{"error": message})
 }
 
-func verifyToken(r *http.Request) (jwt.Claims, error) {
-	authorizeToken := r.Header.Get("Authorization")
+func verifyToken(authorizeToken string) (jwt.Claims, error) {
+
 	key := config.GetJwtKey().Key
 	signingKey := []byte(key)
 	if len(authorizeToken) == 0 {
@@ -41,8 +43,25 @@ func verifyToken(r *http.Request) (jwt.Claims, error) {
 	})
 	if err == nil {
 		return token.Claims, nil
-	} else {
-		return nil, err
 	}
+	return nil, err
+
+}
+func validToken(authorizeToken string, db *gorm.DB) error {
+	claims, err := verifyToken(authorizeToken)
+	if err != nil {
+		return err
+	}
+	mapClaim := claims.(jwt.MapClaims)
+	auth := model.Auth{
+		UserName: mapClaim["UserName"].(string),
+		Password: mapClaim["Password"].(string),
+	}
+
+	user := model.User{}
+	if err := db.First(&user, model.User{UserName: auth.UserName}).Error; err != nil {
+		return err
+	}
+	return nil
 
 }

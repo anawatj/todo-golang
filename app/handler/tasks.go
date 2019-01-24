@@ -4,29 +4,22 @@ import (
 	"net/http"
 
 	"../model"
-	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/jinzhu/gorm"
 )
 
 func GetAllTask(db *gorm.DB, w http.ResponseWriter, r *http.Request) {
-	claims, err := verifyToken(r)
+	authorizeToken := r.Header.Get("Authorization")
+	err := validToken(authorizeToken, db)
 	if err != nil {
-		respondError(w, http.StatusUnauthorized, "Unauthorize")
-		return
-	}
-	mapClaim := claims.(jwt.MapClaims)
-	auth := model.Auth{
-		UserName: mapClaim["UserName"].(string),
-		Password: mapClaim["Password"].(string),
-	}
-
-	user := model.User{}
-	if err := db.First(&user, model.User{UserName: auth.UserName}).Error; err != nil {
-		respondError(w, http.StatusUnauthorized, "Unauthorize")
+		respondError(w, http.StatusUnauthorized, "UnAuthorize")
 		return
 	}
 	tasks := []model.Task{}
 	db.Find(&tasks)
+	if len(tasks) == 0 {
+		respondError(w, http.StatusNotFound, "record not found")
+		return
+	}
 	respondJSON(w, http.StatusOK, tasks)
 
 }

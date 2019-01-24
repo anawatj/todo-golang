@@ -7,49 +7,31 @@ import (
 	"github.com/gorilla/mux"
 
 	"../model"
-	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/jinzhu/gorm"
 )
 
 func GetAllProject(db *gorm.DB, w http.ResponseWriter, r *http.Request) {
-
-	claims, err := verifyToken(r)
+	authorizeToken := r.Header.Get("Authorization")
+	err := validToken(authorizeToken, db)
 	if err != nil {
-		respondError(w, http.StatusUnauthorized, "Unauthorize")
-		return
-	}
-	mapClaim := claims.(jwt.MapClaims)
-	auth := model.Auth{
-		UserName: mapClaim["UserName"].(string),
-		Password: mapClaim["Password"].(string),
-	}
-
-	user := model.User{}
-	if err := db.First(&user, model.User{UserName: auth.UserName}).Error; err != nil {
-		respondError(w, http.StatusUnauthorized, "Unauthorize")
+		respondError(w, http.StatusUnauthorized, "UnAuthorize")
 		return
 	}
 	projects := []model.Project{}
 	db.Find(&projects)
+	if len(projects) == 0 {
+		respondError(w, http.StatusNotFound, "record not found")
+		return
+	}
 	respondJSON(w, http.StatusOK, projects)
 }
 
 func CreateProject(db *gorm.DB, w http.ResponseWriter, r *http.Request) {
 
-	claims, err := verifyToken(r)
+	authorizeToken := r.Header.Get("Authorization")
+	err := validToken(authorizeToken, db)
 	if err != nil {
-		respondError(w, http.StatusUnauthorized, "Unauthorize")
-		return
-	}
-	mapClaim := claims.(jwt.MapClaims)
-	auth := model.Auth{
-		UserName: mapClaim["UserName"].(string),
-		Password: mapClaim["Password"].(string),
-	}
-
-	user := model.User{}
-	if err := db.First(&user, model.User{UserName: auth.UserName}).Error; err != nil {
-		respondError(w, http.StatusUnauthorized, "Unauthorize")
+		respondError(w, http.StatusUnauthorized, "UnAuthorize")
 		return
 	}
 	project := model.Project{}
@@ -68,20 +50,10 @@ func CreateProject(db *gorm.DB, w http.ResponseWriter, r *http.Request) {
 	respondJSON(w, http.StatusCreated, project)
 }
 func UpdateProject(db *gorm.DB, w http.ResponseWriter, r *http.Request) {
-	claims, err := verifyToken(r)
+	authorizeToken := r.Header.Get("Authorization")
+	err := validToken(authorizeToken, db)
 	if err != nil {
-		respondError(w, http.StatusUnauthorized, "Unauthorize")
-		return
-	}
-	mapClaim := claims.(jwt.MapClaims)
-	auth := model.Auth{
-		UserName: mapClaim["UserName"].(string),
-		Password: mapClaim["Password"].(string),
-	}
-
-	user := model.User{}
-	if err := db.First(&user, model.User{UserName: auth.UserName}).Error; err != nil {
-		respondError(w, http.StatusUnauthorized, "Unauthorize")
+		respondError(w, http.StatusUnauthorized, "UnAuthorize")
 		return
 	}
 
@@ -100,35 +72,24 @@ func UpdateProject(db *gorm.DB, w http.ResponseWriter, r *http.Request) {
 	respondJSON(w, http.StatusOK, project)
 }
 func GetProject(db *gorm.DB, w http.ResponseWriter, r *http.Request) {
-	claims, err := verifyToken(r)
+	authorizeToken := r.Header.Get("Authorization")
+	err := validToken(authorizeToken, db)
 	if err != nil {
-		respondError(w, http.StatusUnauthorized, "Unauthorize")
+		respondError(w, http.StatusUnauthorized, "UnAuthorize")
 		return
 	}
-	mapClaim := claims.(jwt.MapClaims)
-	auth := model.Auth{
-		UserName: mapClaim["UserName"].(string),
-		Password: mapClaim["Password"].(string),
-	}
-
-	user := model.User{}
-	if err := db.First(&user, model.User{UserName: auth.UserName}).Error; err != nil {
-		respondError(w, http.StatusUnauthorized, "Unauthorize")
-		return
-	}
-
 	vars := mux.Vars(r)
 	name := vars["name"]
 
 	project := model.Project{}
 	if err := db.First(&project, model.Project{Name: name}).Error; err != nil {
+		if err.Error() == "record not found" {
+			respondError(w, http.StatusNotFound, err.Error())
+			return
+		}
 		respondError(w, http.StatusInternalServerError, err.Error())
 		return
 
-	}
-	if project == (model.Project{}) {
-		respondError(w, http.StatusNotFound, "not found project")
-		return
 	}
 	respondJSON(w, http.StatusOK, project)
 
