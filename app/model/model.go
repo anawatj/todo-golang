@@ -17,7 +17,7 @@ type Task struct {
 	Name        string `gorm:"unique" json:"name"`
 	Description string `json:"description"`
 	Subject     string `json:"subject"`
-	ProjectID   string `json:"projectId"`
+	ProjectID   int    `json:"projectId"`
 }
 
 type User struct {
@@ -29,7 +29,7 @@ type User struct {
 }
 type Auth struct {
 	UserName string `json:"username"`
-	Password string `json:"password`
+	Password string `json:"password"`
 }
 type JwtToken struct {
 	Token string `json:"token"`
